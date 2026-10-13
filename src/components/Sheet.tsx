@@ -12,21 +12,26 @@ interface Props {
 /** スマホでは下から出るシート、PC では中央のダイアログ */
 export function Sheet({ open, onClose, title, subtitle, children, wide }: Props) {
   const ref = useRef<HTMLDivElement>(null);
+  // onClose は呼び出し側で毎回作り直されることがあるため、ref 経由で使う。
+  // （依存に入れると、入力のたびに下の処理が走り、入力欄から選択が外れてしまう）
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current();
     };
     document.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    ref.current?.focus();
+    // 中に自動で選択される入力欄（autoFocus）がなければ、シート自体を選択しておく
+    if (!ref.current?.contains(document.activeElement)) ref.current?.focus();
     return () => {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prev;
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
   return (
