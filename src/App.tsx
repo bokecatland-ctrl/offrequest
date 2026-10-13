@@ -131,7 +131,7 @@ export function App() {
     <div className={`app${adminWide ? ' app-admin-wide' : ''}${tab === 'admin' ? ' tab-admin' : ''}`}>
       {adminWide && (
         <aside className="sidebar" aria-label="メニュー">
-          <p className="sidebar-title">希望休アプリ</p>
+          <p className="sidebar-title">みんなの希望休</p>
           {(['calendar', 'long'] as Tab[]).map((t) => (
             <button
               type="button"
