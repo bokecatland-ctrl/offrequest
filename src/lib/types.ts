@@ -36,6 +36,15 @@ export interface AdminOverview {
   };
   staff: AdminStaff[];
   months: MonthInfo[];
+  name_changes: NameChange[];
+}
+
+export interface NameChange {
+  id: string;
+  status?: 'pending' | 'approved' | 'rejected';
+  from_staff_id: string | null;
+  to_staff_id: string;
+  created_at: string;
 }
 
 export interface OffRequest {

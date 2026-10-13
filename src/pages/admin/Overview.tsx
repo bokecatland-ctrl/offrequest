@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useApp } from '../../AppContext';
 import { api } from '../../lib/api';
-import { deadlineLabel, deadlineRemaining, parts, shortDate } from '../../lib/dates';
+import { deadlineLabel, deadlineRemaining, formatDateTime, parts, shortDate } from '../../lib/dates';
 import { buildDays, hasInput, hasLongLeaveInMonth } from '../../lib/monthView';
 import { NOTE_LABEL } from '../../lib/types';
 import { MonthTable } from './MonthTable';
@@ -31,6 +31,12 @@ export function Overview() {
     setBusy(false);
   };
 
+  const decide = async (id: string, approve: boolean) => {
+    setBusy(true);
+    await run(() => api.adminDecideNameChange(adminSession, id, approve), approve ? '承認しました' : '却下しました');
+    setBusy(false);
+  };
+
   return (
     <div className="admin-overview">
       <div className="admin-toolbar">
@@ -41,6 +47,35 @@ export function Overview() {
           代行で登録する（締切後・上限超え）
         </button>
       </div>
+
+      {admin.name_changes.length > 0 && (
+        <section className="card card-attention">
+          <h3 className="card-title">
+            名前の変更申請<span className="card-title-sub">{admin.name_changes.length}件</span>
+          </h3>
+          <p className="muted small">
+            名前を間違えて選んだスタッフからの申請です。承認すると、そのスマホの名前が次に開いたときに切り替わります。
+          </p>
+          <ul className="admin-list">
+            {admin.name_changes.map((c) => (
+              <li key={c.id}>
+                <span>
+                  <strong>{c.from_staff_id ? staffName(c.from_staff_id) : '—'}</strong> → <strong>{staffName(c.to_staff_id)}</strong>
+                </span>
+                <span className="muted small">{formatDateTime(c.created_at)}</span>
+                <span className="push-right row-gap">
+                  <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={() => decide(c.id, false)}>
+                    却下
+                  </button>
+                  <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => decide(c.id, true)}>
+                    承認する
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="admin-cards">
         <section className="card">

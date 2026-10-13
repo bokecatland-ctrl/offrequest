@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { api, ApiError } from './lib/api';
-import { KEYS, load, save } from './lib/storage';
-import type { AdminOverview, Bootstrap, LongLeave, MonthData } from './lib/types';
+import { getDeviceId, KEYS, load, save } from './lib/storage';
+import type { AdminOverview, Bootstrap, LongLeave, MonthData, NameChange } from './lib/types';
 
 export type AppStatus = 'loading' | 'ready' | 'no_token' | 'invalid_token' | 'error';
 
@@ -14,6 +14,9 @@ interface AppValue {
   setMonth: (m: string) => void;
   data: MonthData | null;
   longLeaves: LongLeave[];
+  /** このスマホの名前の変更申請（承認待ち） */
+  nameChange: NameChange | null;
+  deviceId: string;
   staffId: string | null;
   setStaffId: (id: string | null) => void;
   staffName: (id: string) => string;
@@ -71,6 +74,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [month, setMonthState] = useState<string | null>(null);
   const [data, setData] = useState<MonthData | null>(null);
   const [longLeaves, setLongLeaves] = useState<LongLeave[]>([]);
+  const [nameChange, setNameChange] = useState<NameChange | null>(null);
+  const [deviceId] = useState(getDeviceId);
   const [staffId, setStaffIdState] = useState<string | null>(() => load(KEYS.staffId));
   const [adminSession, setAdminSession] = useState<string | null>(() => {
     const s = load(KEYS.adminSession);
@@ -123,6 +128,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const [d, ll] = await Promise.all([m ? api.month(token, m) : Promise.resolve(null), api.longLeaves(token)]);
       if (monthRef.current === m) setData(d);
       setLongLeaves(ll);
+
+      // 名前の変更申請：承認されていれば、このスマホの名前を切り替える
+      const nc = await api.nameChangeStatus(token, deviceId);
+      if (nc?.status === 'approved' || nc?.status === 'rejected') {
+        if (nc.status === 'approved') {
+          setStaffIdState(nc.to_staff_id);
+          save(KEYS.staffId, nc.to_staff_id);
+          const to = b.staff.find((x) => x.id === nc.to_staff_id)?.name ?? '';
+          showToast(`名前の変更が承認され、「${to}」に切り替わりました`);
+        } else {
+          showToast('名前の変更申請は承認されませんでした。管理者に確認してください', 'error');
+        }
+        await api.ackNameChange(token, deviceId, nc.id);
+        setNameChange(null);
+      } else {
+        setNameChange(nc);
+      }
+
       if (adminSession) {
         try {
           setAdmin(await api.adminOverview(adminSession));
@@ -142,7 +165,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         handleError(e);
       }
     }
-  }, [token, adminSession, dropAdmin, handleError, status]);
+  }, [token, adminSession, deviceId, dropAdmin, handleError, showToast, status]);
 
   useEffect(() => {
     void reload();
@@ -247,6 +270,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setMonth,
     data,
     longLeaves,
+    nameChange,
+    deviceId,
     staffId,
     setStaffId,
     staffName,

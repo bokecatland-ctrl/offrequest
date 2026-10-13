@@ -233,6 +233,40 @@ begin
   raise notice 'ok: 出勤時間希望・予定あり・月のメモ';
 end $$;
 
+-- 名前の変更申請 → 承認・却下
+do $$
+declare t text := current_setting('t.token'); a text := current_setting('t.admin');
+  s1 uuid := current_setting('t.s1')::uuid; s2 uuid := current_setting('t.s2')::uuid; st jsonb; o jsonb;
+begin
+  perform public.staff_request_name_change(t, 'device-aaaa-1', s1, s2);
+  perform public.staff_request_name_change(t, 'device-aaaa-1', s1, s2);  -- 出し直しても承認待ちは1件
+  st := public.staff_name_change_status(t, 'device-aaaa-1');
+  assert st->>'status' = 'pending' and st->>'to_staff_id' = s2::text, 'FAIL: 申請の状況 ' || st::text;
+  o := public.admin_get_overview(a);
+  assert jsonb_array_length(o->'name_changes') = 1, 'FAIL: 管理者に申請が見えない';
+  perform public.admin_decide_name_change(a, (st->>'id')::uuid, true);
+  st := public.staff_name_change_status(t, 'device-aaaa-1');
+  assert st->>'status' = 'approved', 'FAIL: 承認になっていない';
+  perform public.staff_ack_name_change(t, 'device-aaaa-1', (st->>'id')::uuid);
+  assert public.staff_name_change_status(t, 'device-aaaa-1') is null, 'FAIL: 反映後も残っている';
+  -- 却下
+  perform public.staff_request_name_change(t, 'device-bbbb-2', s2, s1);
+  st := public.staff_name_change_status(t, 'device-bbbb-2');
+  perform public.admin_decide_name_change(a, (st->>'id')::uuid, false);
+  assert public.staff_name_change_status(t, 'device-bbbb-2')->>'status' = 'rejected', 'FAIL: 却下';
+  -- 取り消し
+  perform public.staff_request_name_change(t, 'device-cccc-3', s1, s2);
+  st := public.staff_name_change_status(t, 'device-cccc-3');
+  perform public.staff_cancel_name_change(t, 'device-cccc-3', (st->>'id')::uuid);
+  assert public.staff_name_change_status(t, 'device-cccc-3') is null, 'FAIL: 取り消し';
+  begin
+    perform public.admin_decide_name_change(a, (st->>'id')::uuid, true);
+    raise exception 'FAIL: 取り消した申請を承認できた';
+  exception when sqlstate 'P0001' then null;
+  end;
+  raise notice 'ok: 名前の変更申請';
+end $$;
+
 -- パスコード5回失敗でロック
 do $$
 declare r jsonb; i int;

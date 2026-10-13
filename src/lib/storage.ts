@@ -22,4 +22,18 @@ export const KEYS = {
   adminSession: 'offreq.adminSession',
   adminExpires: 'offreq.adminExpires',
   view: 'offreq.view',
+  deviceId: 'offreq.deviceId',
 };
+
+/** このスマホ（ブラウザ）を区別するためのランダムなID。名前の変更申請に使う */
+export function getDeviceId(): string {
+  let id = load(KEYS.deviceId);
+  if (!id) {
+    id =
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+    save(KEYS.deviceId, id);
+  }
+  return id;
+}

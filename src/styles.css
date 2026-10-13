@@ -681,6 +681,32 @@ textarea.input {
   color: var(--primary-dark);
 }
 
+.confirm-bar {
+  position: sticky;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  background: var(--surface);
+  border: 2px solid var(--primary);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: grid;
+  gap: 8px;
+  box-shadow: 0 6px 24px rgba(20, 30, 40, 0.15);
+}
+
+.confirm-name {
+  font-size: 20px;
+}
+
+.chip-pending {
+  flex: none;
+  font-size: 11px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: var(--paid-soft);
+  border: 1px solid var(--paid-line);
+  color: #6b4100;
+}
+
 /* ---------- 入力状況 ---------- */
 
 .status-card {
@@ -1282,6 +1308,10 @@ textarea.input {
 
 .admin-toolbar .btn {
   margin-left: auto;
+}
+
+.card-attention {
+  border: 2px solid var(--paid-line);
 }
 
 .admin-cards {

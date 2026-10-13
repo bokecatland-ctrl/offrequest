@@ -5,6 +5,7 @@ import type {
   Bootstrap,
   LongLeave,
   MonthData,
+  NameChange,
   NoteType,
   RequestKind,
 } from './types';
@@ -52,6 +53,15 @@ export const api = {
   saveMonthMemo: (token: string, staffId: string, month: string, memo: string) =>
     rpc('staff_save_month_memo', { p_token: token, p_staff_id: staffId, p_month: month, p_memo: memo }),
 
+  requestNameChange: (token: string, deviceId: string, from: string | null, to: string) =>
+    rpc('staff_request_name_change', { p_token: token, p_device_id: deviceId, p_from_staff_id: from, p_to_staff_id: to }),
+  nameChangeStatus: (token: string, deviceId: string) =>
+    rpc<NameChange | null>('staff_name_change_status', { p_token: token, p_device_id: deviceId }),
+  ackNameChange: (token: string, deviceId: string, id: string) =>
+    rpc('staff_ack_name_change', { p_token: token, p_device_id: deviceId, p_id: id }),
+  cancelNameChange: (token: string, deviceId: string, id: string) =>
+    rpc('staff_cancel_name_change', { p_token: token, p_device_id: deviceId, p_id: id }),
+
   // ---- 管理者 ----
   adminLogin: (token: string, passcode: string) =>
     rpc<{ ok: boolean; session?: string; expires_at?: string; message?: string; locked?: boolean }>(
@@ -97,6 +107,8 @@ export const api = {
   adminChangePasscode: (session: string, current: string, next: string) =>
     rpc('admin_change_passcode', { p_session: session, p_current: current, p_new: next }),
   adminRegenerateToken: (session: string) => rpc<string>('admin_regenerate_token', { p_session: session }),
+  adminDecideNameChange: (session: string, id: string, approve: boolean) =>
+    rpc('admin_decide_name_change', { p_session: session, p_id: id, p_approve: approve }),
   adminAudit: (session: string, limit = 200) =>
     rpc<AuditEntry[]>('admin_get_audit', { p_session: session, p_limit: limit }),
 };

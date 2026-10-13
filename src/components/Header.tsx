@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useApp } from '../AppContext';
 import { monthLabel } from '../lib/dates';
-import { NamePicker } from './NamePicker';
+import { NameChangeForm } from './NamePicker';
 import { PasscodeDialog } from './PasscodeDialog';
 import { Sheet } from './Sheet';
 import { useLongPress } from './useLongPress';
 
 export function Header({ label = '希望休の入力' }: { label?: string }) {
-  const { boot, month, setMonth, staffId, staffName, adminSession } = useApp();
+  const { boot, month, setMonth, staffId, staffName, adminSession, nameChange } = useApp();
   const [passOpen, setPassOpen] = useState(false);
   const [nameOpen, setNameOpen] = useState(false);
   // 管理者の入口：タイトルを長押し（見た目では目立たせない）
@@ -42,14 +42,14 @@ export function Header({ label = '希望休の入力' }: { label?: string }) {
         </div>
       </div>
       {!adminSession && staffId && (
-        <button type="button" className="name-chip" onClick={() => setNameOpen(true)} aria-label="名前を切り替える">
+        <button type="button" className="name-chip" onClick={() => setNameOpen(true)} aria-label={`${staffName(staffId)}（名前の変更申請）`}>
           <span className="truncate">{staffName(staffId)}</span>
-          <span aria-hidden="true">▾</span>
+          {nameChange && <span className="chip-pending">申請中</span>}
         </button>
       )}
       <PasscodeDialog open={passOpen} onClose={() => setPassOpen(false)} />
-      <Sheet open={nameOpen} onClose={() => setNameOpen(false)} title="名前の切り替え">
-        <NamePicker onPicked={() => setNameOpen(false)} />
+      <Sheet open={nameOpen} onClose={() => setNameOpen(false)} title="名前の変更申請">
+        <NameChangeForm onDone={() => setNameOpen(false)} />
       </Sheet>
     </header>
   );
