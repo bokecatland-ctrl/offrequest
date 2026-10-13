@@ -51,12 +51,6 @@ export const api = {
     rpc('staff_save_note', { p_token: token, p_staff_id: staffId, p_date: date, p_type: type, p_comment: comment }),
   saveMonthMemo: (token: string, staffId: string, month: string, memo: string) =>
     rpc('staff_save_month_memo', { p_token: token, p_staff_id: staffId, p_month: month, p_memo: memo }),
-  saveLongLeave: (token: string, staffId: string, id: string | null, start: string, end: string, memo: string) =>
-    rpc<string>('staff_save_long_leave', {
-      p_token: token, p_staff_id: staffId, p_id: id, p_start: start, p_end: end, p_memo: memo,
-    }),
-  deleteLongLeave: (token: string, staffId: string, id: string) =>
-    rpc('staff_delete_long_leave', { p_token: token, p_staff_id: staffId, p_id: id }),
 
   // ---- 管理者 ----
   adminLogin: (token: string, passcode: string) =>

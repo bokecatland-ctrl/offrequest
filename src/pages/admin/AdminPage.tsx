@@ -11,7 +11,7 @@ export type AdminSection = 'overview' | 'export' | 'longleave' | 'months' | 'sta
 export const ADMIN_SECTIONS: { id: AdminSection; label: string }[] = [
   { id: 'overview', label: '月間一覧' },
   { id: 'export', label: 'シフト表用の書き出し' },
-  { id: 'longleave', label: '長期有休（代行）' },
+  { id: 'longleave', label: '長期有休の登録' },
   { id: 'months', label: '月の設定' },
   { id: 'staff', label: '名簿' },
   { id: 'settings', label: 'URL・設定' },

@@ -5,7 +5,7 @@ import { api } from '../../lib/api';
 import { shortDate } from '../../lib/dates';
 import type { LongLeave } from '../../lib/types';
 
-/** 長期有休の代行登録（管理者は締切に関係なく登録・変更できる） */
+/** 長期有休の登録（管理者だけが登録・変更できる。締切に関係なく変更可） */
 export function LongLeaveAdmin() {
   const { admin, adminSession, run, staffName, longLeaves } = useApp();
   const [list, setList] = useState<LongLeave[]>(longLeaves);
@@ -36,7 +36,7 @@ export function LongLeaveAdmin() {
   return (
     <div className="stack">
       <section className="card">
-        <h2 className="card-title">長期有休の代行登録</h2>
+        <h2 className="card-title">長期有休の登録</h2>
         <LongLeaveForm key={formKey} staffOptions={staffOptions} busy={busy} onSubmit={(v) => submit(null, v)} />
       </section>
       <section className="card">

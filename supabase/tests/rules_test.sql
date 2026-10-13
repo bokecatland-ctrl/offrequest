@@ -170,11 +170,15 @@ begin
   raise notice 'ok: 管理者の代行登録';
 end $$;
 
--- 長期有休
+-- 長期有休（管理者だけが登録できる）
 do $$
-declare t text := current_setting('t.token'); s5 uuid := current_setting('t.s5')::uuid; s4 uuid := current_setting('t.s4')::uuid; lid uuid;
+declare t text := current_setting('t.token'); a text := current_setting('t.admin');
+  s5 uuid := current_setting('t.s5')::uuid; lid uuid;
 begin
-  lid := public.staff_save_long_leave(t, s5, null, '2026-11-10', '2026-11-25', '海外');
+  if exists (select 1 from pg_proc where proname in ('staff_save_long_leave', 'staff_delete_long_leave')) then
+    raise exception 'FAIL: スタッフ用の長期有休の関数が残っている';
+  end if;
+  lid := public.admin_save_long_leave(a, s5, null, '2026-11-10', '2026-11-25', '海外');
   begin
     perform public.staff_set_request(t, s5, '2026-11-02', 'off');
     raise exception 'FAIL: 長期有休の月に希望休が入った';
@@ -182,24 +186,12 @@ begin
     assert sqlerrm like '長期有休が入っている%', 'FAIL: メッセージ: ' || sqlerrm;
   end;
   perform public.staff_set_request(t, s5, '2026-11-02', 'paid');  -- 希望有休は入れられる
-  begin
-    perform public.staff_delete_long_leave(t, s4, lid);
-    raise exception 'FAIL: 他人の長期有休を削除できた';
-  exception when sqlstate 'P0001' then null;
-  end;
-  begin
-    perform public.staff_save_long_leave(t, s4, lid, '2026-11-10', '2026-11-12', '');
-    raise exception 'FAIL: 他人の長期有休を変更できた';
-  exception when sqlstate 'P0001' then null;
-  end;
-  begin
-    perform public.staff_save_long_leave(t, s5, null, '2026-12-10', '2026-12-12', '');
-    raise exception 'FAIL: 締切済みの月に長期有休を入れられた';
-  exception when sqlstate 'P0001' then null;
-  end;
-  perform public.staff_save_long_leave(t, s5, lid, '2026-11-11', '2026-11-25', '海外（変更）');
+  -- 管理者は締切済みの月にも登録・変更できる
+  perform public.admin_save_long_leave(a, s5, null, '2026-12-10', '2026-12-12', '');
+  perform public.admin_save_long_leave(a, s5, lid, '2026-11-11', '2026-11-25', '海外（変更）');
   assert jsonb_array_length(public.get_month(t, '2026-11')->'long_leaves') = 1, 'FAIL: 長期有休が見えない';
-  raise notice 'ok: 長期有休';
+  assert jsonb_array_length(public.get_long_leaves(t)) = 2, 'FAIL: 長期有休の一覧';
+  raise notice 'ok: 長期有休（管理者のみ）';
 end $$;
 
 -- 出勤時間希望・予定あり・月のメモ
