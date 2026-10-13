@@ -37,9 +37,11 @@ export function useApp(): AppValue {
   return v;
 }
 
+const TOKEN_RE = /[#&]k=([0-9a-z]{16,})/i;
+
 /** URL の #k=xxxx からトークンを取り出す（なければ前回のものを使う） */
 function readToken(): string {
-  const m = window.location.hash.match(/[#&]k=([0-9a-z]{16,})/i);
+  const m = window.location.hash.match(TOKEN_RE);
   if (m) {
     save(KEYS.token, m[1]);
     return m[1];
@@ -216,6 +218,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (adminSession) await api.adminLogout(adminSession).catch(() => undefined);
     dropAdmin();
   }, [adminSession, dropAdmin]);
+
+  // 開いたままのタブで URL の #k= だけを書き換えた場合は、ページが読み込み直されないため、ここで読み込み直す
+  useEffect(() => {
+    const onHash = () => {
+      const m = window.location.hash.match(TOKEN_RE);
+      if (m && m[1] !== token) {
+        save(KEYS.token, m[1]);
+        window.location.reload();
+      }
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, [token]);
 
   const setToken = useCallback((t: string) => {
     save(KEYS.token, t);
