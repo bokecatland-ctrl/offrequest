@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useMedia } from './components/useMedia';
 import { useApp } from './AppContext';
 import { Header } from './components/Header';
 import { NamePicker } from './components/NamePicker';
@@ -9,18 +10,6 @@ import { LongLeavePage } from './pages/LongLeavePage';
 import { MinePage } from './pages/MinePage';
 
 type Tab = 'calendar' | 'long' | 'mine' | 'admin';
-
-function useWide(): boolean {
-  const q = '(min-width: 1024px)';
-  const [wide, setWide] = useState(() => window.matchMedia(q).matches);
-  useEffect(() => {
-    const m = window.matchMedia(q);
-    const on = () => setWide(m.matches);
-    m.addEventListener('change', on);
-    return () => m.removeEventListener('change', on);
-  }, []);
-  return wide;
-}
 
 const ICONS: Record<Tab, JSX.Element> = {
   calendar: (
@@ -56,7 +45,7 @@ export function App() {
   const { status, errorMessage, staffId, adminSession, toast, reload } = useApp();
   const [tab, setTab] = useState<Tab>('calendar');
   const [section, setSection] = useState<AdminSection>('overview');
-  const wide = useWide();
+  const wide = useMedia('(min-width: 1024px)');
 
   // 管理者モードが外れたら、管理タブから戻す
   useEffect(() => {
@@ -128,7 +117,7 @@ export function App() {
   );
 
   return (
-    <div className={`app${adminWide ? ' app-admin-wide' : ''}${tab === 'admin' ? ' tab-admin' : ''}`}>
+    <div className={`app${adminWide ? ' app-admin-wide' : ''} tab-${tab}`}>
       {adminWide && (
         <aside className="sidebar" aria-label="メニュー">
           <p className="sidebar-title">みんなの希望休</p>

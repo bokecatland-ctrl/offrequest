@@ -1622,3 +1622,153 @@ textarea.input {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- PC：カレンダーを広くして名前を出す ---------- */
+
+@media (min-width: 900px) {
+  .app.tab-calendar .main,
+  .app.app-admin-wide.tab-calendar .main {
+    max-width: 1180px;
+  }
+}
+
+.calendar.named .cal-row,
+.calendar.named .cal-grid {
+  gap: 6px;
+}
+
+.calendar.named .cal-dow {
+  font-size: 13px;
+}
+
+.calendar.named .cal-cell {
+  min-height: 116px;
+  padding: 6px 6px 24px;
+  grid-template-rows: auto 1fr;
+  justify-items: stretch;
+  align-content: start;
+  gap: 4px;
+  text-align: left;
+}
+
+.calendar.named .cal-cell.mine {
+  padding: 5px 5px 23px;
+}
+
+.calendar.named .cal-blank {
+  min-height: 116px;
+}
+
+.cal-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 0 2px;
+}
+
+.calendar.named .cal-num {
+  font-size: 15px;
+}
+
+.cal-count {
+  font-size: 12px;
+  color: var(--text-2);
+  font-weight: 700;
+}
+
+.cal-count.full {
+  padding: 0 6px;
+  border-radius: 6px;
+  background: var(--line-strong);
+  color: #fff;
+}
+
+.cal-names {
+  display: grid;
+  gap: 3px;
+  align-content: start;
+  min-width: 0;
+}
+
+.nm {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  padding: 0 6px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.nm-off {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+
+.nm-paid {
+  background: var(--paid-soft);
+  border-color: var(--paid-line);
+  color: #6b4100;
+}
+
+.nm-paid-pending {
+  background: var(--paid-soft);
+  border: 1px dashed var(--paid-line);
+  color: #6b4100;
+}
+
+.nm-note {
+  padding-left: 2px;
+  font-weight: 400;
+  color: var(--text-2);
+}
+
+/* 自分：濃い枠で囲む（色だけでなく形でも区別） */
+.nm.me {
+  border: 2px solid var(--primary-dark);
+  padding: 0 5px;
+}
+
+.nm-mark {
+  flex: none;
+  font-size: 10px;
+  color: var(--note);
+}
+
+.nm-more {
+  font-size: 12px;
+  color: var(--text-2);
+  padding-left: 2px;
+}
+
+/* 長期有休：マス下端の帯に名前 */
+.cal-long-named {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  height: 17px;
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--long-soft);
+  box-shadow: inset 3px 0 0 var(--long);
+  color: #47308f;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.cal-cell.mine .cal-long-named {
+  left: 3px;
+  right: 3px;
+  bottom: 3px;
+}
+
+.legend .nm {
+  font-size: 12px;
+}
