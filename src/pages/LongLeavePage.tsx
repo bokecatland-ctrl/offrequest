@@ -18,7 +18,7 @@ export function LongLeavePage() {
         <p className="info-box">
           {adminSession
             ? '登録・変更は「管理」→「長期有休の登録」から行います。'
-            : '長期有休は管理者が登録します。追加・変更したいときは管理者に相談してください。'}
+            : '追加・変更はスプレッドシートにて行ってください。'}
         </p>
       </section>
 

@@ -7,7 +7,7 @@ import type { LongLeave } from '../../lib/types';
 
 /** 長期有休の登録（管理者だけが登録・変更できる。締切に関係なく変更可） */
 export function LongLeaveAdmin() {
-  const { admin, adminSession, run, staffName, longLeaves } = useApp();
+  const { admin, adminSession, run, staffName, longLeaves, showToast } = useApp();
   const [list, setList] = useState<LongLeave[]>(longLeaves);
   const [editing, setEditing] = useState<LongLeave | null>(null);
   const [busy, setBusy] = useState(false);
@@ -22,11 +22,13 @@ export function LongLeaveAdmin() {
 
   const submit = async (id: string | null, v: { staffId: string | null; start: string; end: string; memo: string }) => {
     setBusy(true);
-    const ok = await run(
-      () => api.adminSaveLongLeave(adminSession, v.staffId!, id, v.start, v.end, v.memo),
-      '長期有休を保存しました',
-    );
+    let removed = 0;
+    const ok = await run(async () => {
+      const r = await api.adminSaveLongLeave(adminSession, v.staffId!, id, v.start, v.end, v.memo);
+      removed = r.removed.length;
+    });
     setBusy(false);
+    if (ok) showToast(removed ? `長期有休を保存しました（希望休・希望有休 ${removed}件を外しました）` : '長期有休を保存しました');
     if (ok) {
       setEditing(null);
       setFormKey((k) => k + 1);
@@ -37,6 +39,10 @@ export function LongLeaveAdmin() {
     <div className="stack">
       <section className="card">
         <h2 className="card-title">長期有休の登録</h2>
+        <p className="muted small">
+          登録・変更すると、その人の希望は自動で外れます：長期有休がかかる月の希望休はすべて、希望有休は期間中のものだけ。
+          外した内容は操作履歴に残ります。
+        </p>
         <LongLeaveForm key={formKey} staffOptions={staffOptions} busy={busy} onSubmit={(v) => submit(null, v)} />
       </section>
       <section className="card">

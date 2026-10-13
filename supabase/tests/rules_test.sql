@@ -178,7 +178,7 @@ begin
   if exists (select 1 from pg_proc where proname in ('staff_save_long_leave', 'staff_delete_long_leave')) then
     raise exception 'FAIL: スタッフ用の長期有休の関数が残っている';
   end if;
-  lid := public.admin_save_long_leave(a, s5, null, '2026-11-10', '2026-11-25', '海外');
+  lid := (public.admin_save_long_leave(a, s5, null, '2026-11-10', '2026-11-25', '海外')->>'id')::uuid;
   begin
     perform public.staff_set_request(t, s5, '2026-11-02', 'off');
     raise exception 'FAIL: 長期有休の月に希望休が入った';
@@ -192,6 +192,27 @@ begin
   assert jsonb_array_length(public.get_month(t, '2026-11')->'long_leaves') = 1, 'FAIL: 長期有休が見えない';
   assert jsonb_array_length(public.get_long_leaves(t)) = 2, 'FAIL: 長期有休の一覧';
   raise notice 'ok: 長期有休（管理者のみ）';
+end $$;
+
+-- 長期有休を後から入れると、その月の希望休と期間中の希望有休が自動で外れる
+do $$
+declare t text := current_setting('t.token'); a text := current_setting('t.admin');
+  s4 uuid := current_setting('t.s4')::uuid; r jsonb; d jsonb;
+begin
+  perform public.staff_set_request(t, s4, '2026-11-21', 'off');   -- 期間中の希望休
+  perform public.staff_set_request(t, s4, '2026-11-22', 'paid');  -- 期間中の希望有休
+  perform public.staff_set_request(t, s4, '2026-11-08', 'paid');  -- 期間外の希望有休（残る）
+  -- 11/4 の希望休（期間外・同じ月）も外れる
+  r := public.admin_save_long_leave(a, s4, null, '2026-11-20', '2026-11-23', '');
+  assert jsonb_array_length(r->'removed') = 3, 'FAIL: 外れた件数 ' || (r->'removed')::text;
+  d := public.get_month(t, '2026-11');
+  assert not exists (select 1 from jsonb_array_elements(d->'requests') x
+                      where x->>'staff_id' = s4::text and x->>'kind' = 'off'), 'FAIL: 希望休が残っている';
+  assert exists (select 1 from jsonb_array_elements(d->'requests') x
+                  where x->>'staff_id' = s4::text and x->>'date' = '2026-11-08'), 'FAIL: 期間外の希望有休が消えた';
+  assert not exists (select 1 from jsonb_array_elements(d->'requests') x
+                      where x->>'staff_id' = s4::text and x->>'date' = '2026-11-22'), 'FAIL: 期間中の希望有休が残っている';
+  raise notice 'ok: 長期有休でその月の希望休・期間中の希望有休が外れる';
 end $$;
 
 -- 出勤時間希望・予定あり・月のメモ

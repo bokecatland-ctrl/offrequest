@@ -41,7 +41,7 @@ begin
 end $$;
 -- 長期有休は管理者が登録する（postgres で内部関数を直接使う）
 do $$ begin
-  perform public._save_long_leave((select id from public.staff where display_name = '中村'), null, '2026-11-02', '2026-11-17', '帰省', true);
+  perform public._save_long_leave((select id from public.staff where display_name = '中村'), null, '2026-11-02', '2026-11-17', '帰省');
 end $$;
 
 select 'staff URL: http://localhost:5173/#k=demo0123456789abcdef0123456789ab' as info;

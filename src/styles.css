@@ -823,7 +823,7 @@ textarea.input {
 .cal-cell {
   position: relative;
   min-height: 64px;
-  padding: 5px 2px 6px;
+  padding: 5px 2px 10px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--surface);
@@ -845,7 +845,13 @@ textarea.input {
 
 .cal-cell.mine {
   border: 2px solid var(--primary);
-  padding: 4px 1px 5px;
+  padding: 4px 1px 9px;
+}
+
+.cal-cell.mine .cal-long {
+  left: 3px;
+  right: 3px;
+  bottom: 3px;
 }
 
 .cal-cell.today .cal-num {
@@ -861,7 +867,7 @@ textarea.input {
 
 .cal-dots {
   display: flex;
-  gap: 3px;
+  gap: 4px;
   align-items: center;
 }
 
@@ -879,23 +885,17 @@ textarea.input {
   border-color: var(--primary);
 }
 
-/* 自分の丸：濃い色 ＋ 外側の輪（色だけでなく形でも区別） */
+/* 自分の丸：濃い色 ＋ 中心の白い点（色だけでなく形でも区別。大きさは変えない） */
 .dot.filled.me {
-  background: var(--primary-dark);
   border-color: var(--primary-dark);
-  box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--primary-dark);
-}
-
-.dot-more {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--danger);
+  background: radial-gradient(circle, #fff 0 1.6px, var(--primary-dark) 2.2px);
 }
 
 .cal-marks {
   display: flex;
   gap: 4px;
   align-items: center;
+  justify-content: center;
   height: 8px;
 }
 
@@ -905,25 +905,33 @@ textarea.input {
 }
 
 .mk-paid {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   background: var(--paid);
   border-radius: 1px;
 }
 
-.mk-paid.me {
-  outline: 1.5px solid var(--primary-dark);
-  outline-offset: 1px;
-}
-
 .mk-note {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
+  margin: 0 1px;
   background: var(--note);
   transform: rotate(45deg);
 }
 
-.mk-long {
+/* 長期有休：マスの下端の帯（印とは分けて、ほかと重ならないように） */
+.cal-long {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--long);
+}
+
+.mk-long,
+.mk-long-band {
   width: 14px;
   height: 4px;
   border-radius: 2px;

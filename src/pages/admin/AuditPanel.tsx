@@ -13,6 +13,7 @@ const ACTION: Record<string, string> = {
   save_long_leave: '長期有休の保存',
   delete_long_leave: '長期有休の削除',
   set_paid_status: '希望有休の確認',
+  auto_cancel_request: '長期有休による自動取消',
   save_month: '月の設定',
   save_staff: '名簿の保存',
   reorder_staff: '並び順の変更',
@@ -39,6 +40,8 @@ function describe(e: AuditEntry): string {
   if (typeof d.comment === 'string') parts.push(`「${d.comment}」`);
   if (typeof d.start_date === 'string' && typeof d.end_date === 'string')
     parts.push(`${shortDate(d.start_date)}〜${shortDate(d.end_date)}`);
+  const removed = (e.detail as { removed?: { date: string; kind: string }[] }).removed;
+  if (Array.isArray(removed)) parts.push('外した希望：' + removed.map((r) => `${shortDate(r.date)} ${KIND[r.kind] ?? r.kind}`).join('、'));
   if (typeof d.month === 'string') parts.push(d.month);
   if (typeof d.display_name === 'string') parts.push(d.display_name);
   return parts.join(' ');

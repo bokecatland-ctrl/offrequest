@@ -75,7 +75,7 @@ export const api = {
     rpc('admin_save_month_memo', { p_session: session, p_staff_id: staffId, p_month: month, p_memo: memo }),
   adminLongLeaves: (session: string) => rpc<LongLeave[]>('admin_get_long_leaves', { p_session: session }),
   adminSaveLongLeave: (session: string, staffId: string, id: string | null, start: string, end: string, memo: string) =>
-    rpc<string>('admin_save_long_leave', {
+    rpc<{ id: string; removed: { date: string; kind: 'off' | 'paid' }[] }>('admin_save_long_leave', {
       p_session: session, p_staff_id: staffId, p_id: id, p_start: start, p_end: end, p_memo: memo,
     }),
   adminDeleteLongLeave: (session: string, id: string) =>

@@ -71,13 +71,12 @@ export function Calendar({ days, maxPerDay, meId, onSelect }: Props) {
                   const r = offs[i];
                   return <span key={i} className={`dot${r ? ' filled' : ''}${r && r.staff_id === meId ? ' me' : ''}`} />;
                 })}
-                {n > maxPerDay && <span className="dot-more">+{n - maxPerDay}</span>}
               </span>
               <span className="cal-marks" aria-hidden="true">
-                {day.paids.length > 0 && <span className={`mk mk-paid${minePaid ? ' me' : ''}`} />}
+                {day.paids.length > 0 && <span className="mk mk-paid" />}
                 {day.notes.length > 0 && <span className="mk mk-note" />}
-                {day.longs.length > 0 && <span className="mk mk-long" />}
               </span>
+              {day.longs.length > 0 && <span className="cal-long" aria-hidden="true" />}
             </button>
           );
         })}
@@ -101,7 +100,7 @@ export function Legend({ maxPerDay }: { maxPerDay: number }) {
           <span className="mk mk-note" /> 出勤時間希望・予定あり
         </li>
         <li>
-          <span className="mk mk-long" /> 長期有休
+          <span className="mk mk-long-band" /> 長期有休
         </li>
         <li>
           <span className="dot filled me" /> 自分
