@@ -23,7 +23,11 @@ export function MonthTable({ data, staff, days, maxDays, maxPerDay, onCell }: Pr
             {dates.map((d) => {
               const w = dayOfWeek(d);
               return (
-                <th key={d} className={w === 0 ? 'sun' : w === 6 ? 'sat' : ''}>
+                <th
+                  key={d}
+                  className={`${w === 0 ? 'sun' : w === 6 ? 'sat' : ''}${days.get(d)!.blocked !== null ? ' blocked-col' : ''}`}
+                  title={days.get(d)!.blocked !== null ? `受付しない日${days.get(d)!.blocked ? `（${days.get(d)!.blocked}）` : ''}` : undefined}
+                >
                   <span className="th-day">{parts(d).d}</span>
                   <span className="th-dow">{WEEKDAYS[w]}</span>
                 </th>
@@ -67,7 +71,7 @@ export function MonthTable({ data, staff, days, maxDays, maxPerDay, onCell }: Pr
                     .filter(Boolean)
                     .join('\n');
                   return (
-                    <td key={d} className={`${cls}${day.offs.length >= maxPerDay ? ' day-full' : ''}`}>
+                    <td key={d} className={`${cls}${day.offs.length >= maxPerDay ? ' day-full' : ''}${day.blocked !== null ? ' blocked-col' : ''}`}>
                       <button
                         type="button"
                         className="cell-btn"

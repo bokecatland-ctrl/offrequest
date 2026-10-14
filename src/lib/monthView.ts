@@ -7,12 +7,14 @@ export interface DayInfo {
   paids: OffRequest[];
   longs: LongLeave[];
   notes: DayNote[];
+  /** 受付しない日なら理由（空文字のこともある）。受付する日は null */
+  blocked: string | null;
 }
 
 export function buildDays(data: MonthData): Map<string, DayInfo> {
   const map = new Map<string, DayInfo>();
   for (const date of monthDates(data.month)) {
-    map.set(date, { date, offs: [], paids: [], longs: [], notes: [] });
+    map.set(date, { date, offs: [], paids: [], longs: [], notes: [], blocked: null });
   }
   for (const r of data.requests) {
     const day = map.get(r.date);
@@ -20,6 +22,10 @@ export function buildDays(data: MonthData): Map<string, DayInfo> {
     (r.kind === 'off' ? day.offs : day.paids).push(r);
   }
   for (const n of data.notes) map.get(n.date)?.notes.push(n);
+  for (const b of data.blocked_days ?? []) {
+    const day = map.get(b.date);
+    if (day) day.blocked = b.reason;
+  }
   for (const l of data.long_leaves) {
     for (const day of map.values()) {
       if (inRange(day.date, l.start_date, l.end_date)) day.longs.push(l);

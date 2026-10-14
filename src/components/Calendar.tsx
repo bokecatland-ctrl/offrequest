@@ -56,6 +56,7 @@ export function Calendar({ days, maxPerDay, meId, onSelect }: Props) {
             day.paids.length ? `希望有休${day.paids.length}人` : '',
             day.notes.length ? '出勤時間希望・予定あり' : '',
             day.longs.length ? '長期有休あり' : '',
+            day.blocked !== null ? `受付しない日${day.blocked ? `（${day.blocked}）` : ''}` : '',
           ]
             .filter(Boolean)
             .join('、');
@@ -66,6 +67,7 @@ export function Calendar({ days, maxPerDay, meId, onSelect }: Props) {
               className={[
                 'cal-cell',
                 full ? 'full' : '',
+                day.blocked !== null ? 'blocked' : '',
                 mineOff || minePaid ? 'mine' : '',
                 day.date === today ? 'today' : '',
               ]
@@ -132,6 +134,7 @@ function NamedCell({
     <>
       <span className="cal-top" aria-hidden="true">
         <span className={`cal-num${dow === 0 ? ' sun' : dow === 6 ? ' sat' : ''}`}>{parts(day.date).d}</span>
+        {day.blocked !== null && n === 0 && <span className="cal-blocked-tag">受付なし</span>}
         {n > 0 && (
           <span className={`cal-count${n >= maxPerDay ? ' full' : ''}`}>
             {n >= maxPerDay ? '満員' : `${n}/${maxPerDay}`}
@@ -139,6 +142,7 @@ function NamedCell({
         )}
       </span>
       <span className="cal-names" aria-hidden="true">
+        {day.blocked !== null && <span className="nm-blocked truncate">{day.blocked || '受付しない日'}</span>}
         {shown.map((p) => (
           <span key={p.id} className={`nm nm-${p.kind}${p.id === meId ? ' me' : ''}`}>
             {p.kind === 'note' && <span className="nm-mark">◆</span>}
@@ -181,6 +185,9 @@ export function Legend({ maxPerDay }: { maxPerDay: number }) {
           <li>
             <span className="nm nm-off me">名前</span> 自分
           </li>
+          <li>
+            <span className="blocked-sample" /> 受付しない日
+          </li>
         </ul>
         <p>日付を押すと、コメントを含めた詳しい内容を確認して登録できます。</p>
       </div>
@@ -204,6 +211,9 @@ export function Legend({ maxPerDay }: { maxPerDay: number }) {
         </li>
         <li>
           <span className="dot filled me" /> 自分
+        </li>
+        <li>
+          <span className="blocked-sample" /> 受付しない日
         </li>
       </ul>
       <p>日付をタップすると、誰が入れているかを確認して登録できます。</p>

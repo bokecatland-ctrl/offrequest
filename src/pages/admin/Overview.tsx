@@ -24,6 +24,8 @@ export function Overview() {
   const confirmed = data.requests.filter((r) => r.kind === 'paid' && r.status === 'confirmed');
   const fullDays = [...days.values()].filter((d) => d.offs.length >= s.max_per_day);
   const exceptions = data.requests.filter((r) => r.is_exception);
+  const blockedDates = new Map((data.blocked_days ?? []).map((b) => [b.date, b.reason]));
+  const onBlocked = data.requests.filter((r) => blockedDates.has(r.date) && !r.is_exception);
 
   const setPaid = async (id: string, confirmed: boolean) => {
     setBusy(true);
@@ -71,6 +73,28 @@ export function Overview() {
                     承認する
                   </button>
                 </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {onBlocked.length > 0 && (
+        <section className="card card-attention">
+          <h3 className="card-title">
+            受付しない日に入っている希望<span className="card-title-sub">{onBlocked.length}件</span>
+          </h3>
+          <p className="muted small">受付しない日にする前から入っていた希望です。必要なら本人と相談し、マスを押して取り消してください。</p>
+          <ul className="admin-list">
+            {onBlocked.map((r) => (
+              <li key={r.id}>
+                <strong>{staffName(r.staff_id)}</strong>
+                <span>{shortDate(r.date)}</span>
+                <span className="muted small">{blockedDates.get(r.date) || '受付しない日'}</span>
+                <span className={`badge ${r.kind === 'off' ? 'badge-off' : 'badge-paid-pending'}`}>{r.kind === 'off' ? '希望休' : '希望有休'}</span>
+                <button type="button" className="btn btn-outline btn-sm push-right" onClick={() => setProxy({ staffId: r.staff_id, date: r.date })}>
+                  確認・取り消し
+                </button>
               </li>
             ))}
           </ul>
@@ -187,7 +211,7 @@ export function Overview() {
       <section className="card">
         <h3 className="card-title">全員の月間一覧</h3>
         <p className="muted small">
-          休＝希望休　有＝希望有休（確認済み）　有?＝希望有休（要相談）　長＝長期有休　◆＝出勤時間希望・予定あり　!＝例外登録。
+          休＝希望休　有＝希望有休（確認済み）　有?＝希望有休（要相談）　長＝長期有休　◆＝出勤時間希望・予定あり　!＝例外登録　斜線の列＝受付しない日。
           マスを押すと代行登録できます。
         </p>
         <MonthTable

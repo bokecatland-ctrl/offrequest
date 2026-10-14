@@ -18,6 +18,8 @@ const ACTION: Record<string, string> = {
   approve_name_change: '名前の変更を承認',
   reject_name_change: '名前の変更を却下',
   save_month: '月の設定',
+  save_blocked_days: '受付しない日の登録',
+  delete_blocked_days: '受付しない日の解除',
   save_staff: '名簿の保存',
   reorder_staff: '並び順の変更',
   delete_staff: '名簿の削除',
@@ -45,6 +47,7 @@ function describe(e: AuditEntry): string {
     parts.push(`${shortDate(d.start_date)}〜${shortDate(d.end_date)}`);
   const removed = (e.detail as { removed?: { date: string; kind: string }[] }).removed;
   if (Array.isArray(removed)) parts.push('外した希望：' + removed.map((r) => `${shortDate(r.date)} ${KIND[r.kind] ?? r.kind}`).join('、'));
+  if (typeof d.reason === 'string' && d.reason) parts.push(`（${d.reason}）`);
   if (typeof d.month === 'string') parts.push(d.month);
   if (typeof d.display_name === 'string') parts.push(d.display_name);
   return parts.join(' ');

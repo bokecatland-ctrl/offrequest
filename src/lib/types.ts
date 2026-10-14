@@ -88,6 +88,17 @@ export interface MonthData {
   long_leaves: LongLeave[];
   notes: DayNote[];
   memos: MonthMemo[];
+  blocked_days: BlockedDay[];
+}
+
+/** 受付しない日（連休・年末年始など） */
+export interface BlockedDay {
+  date: string;
+  reason: string;
+}
+
+export interface AdminBlockedDay extends BlockedDay {
+  requests: { staff_id: string; kind: RequestKind; status: PaidStatus | null }[];
 }
 
 export interface AuditEntry {

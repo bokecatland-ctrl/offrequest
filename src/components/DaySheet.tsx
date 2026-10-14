@@ -17,7 +17,7 @@ export function DaySheet({ day, onClose }: Props) {
   if (!day || !data || !boot) return null;
   const max = boot.settings.max_per_day;
   const n = day.offs.length;
-  const subtitle = `希望休 ${n}/${max}${n >= max ? '・満員' : ''}`;
+  const subtitle = `希望休 ${n}/${max}${n >= max ? '・満員' : ''}${day.blocked !== null ? '・受付しない日' : ''}`;
   return (
     <Sheet open onClose={onClose} title={longDate(day.date)} subtitle={subtitle}>
       <DaySheetBody day={day} />
@@ -46,16 +46,27 @@ function DaySheetBody({ day }: { day: DayInfo }) {
     setBusy(false);
   };
 
+  // 受付しない日（案内は上に出し、希望休・希望有休のボタンは出さない）
+  const blocked = day.blocked !== null;
   // 希望休を入れられない理由（画面側の表示用。最終判定はサーバー）
-  let offBlock: string | null = null;
-  if (long) offBlock = '長期有休が入っているため、希望休は管理者に相談してください。';
-  else if (full && myReq?.kind !== 'off')
-    offBlock = '満員です。入りたい場合は、入っている人と相談して、誰かが取り消すと空きます。';
-  else if (used >= maxDays && myReq?.kind !== 'off')
-    offBlock = `希望休は月${maxDays}日まで入れています。ほかの日を取り消すと入れられます。`;
+  const offBlock = blocked
+    ? null
+    : long
+      ? '長期有休が入っているため、希望休は管理者に相談してください。'
+      : full && myReq?.kind !== 'off'
+        ? '満員です。入りたい場合は、入っている人と相談して、誰かが取り消すと空きます。'
+        : used >= maxDays && myReq?.kind !== 'off'
+          ? `希望休は月${maxDays}日まで入れています。ほかの日を取り消すと入れられます。`
+          : null;
 
   return (
     <>
+      {blocked && (
+        <p className="info-box blocked-box">
+          {day.blocked ? <strong>{day.blocked}</strong> : null}
+          {day.blocked ? 'のため、' : ''}この日は希望休・希望有休を受け付けていません。出勤時間希望・予定ありは書けます。
+        </p>
+      )}
       <DayEntries day={day} meId={me} />
 
       {adminSession && <p className="info-box">管理者モードでは閲覧のみです。登録・変更は「管理」の代行登録から行います。</p>}
@@ -76,7 +87,8 @@ function DaySheetBody({ day }: { day: DayInfo }) {
               希望休を取り消す
             </button>
           ) : (
-            !offBlock && (
+            !offBlock &&
+            !blocked && (
               <button
                 type="button"
                 className="btn btn-primary btn-block"
@@ -98,6 +110,7 @@ function DaySheetBody({ day }: { day: DayInfo }) {
               希望有休を取り消す
             </button>
           ) : (
+            !blocked && (
             <button
               type="button"
               className="btn btn-paid btn-block"
@@ -106,6 +119,7 @@ function DaySheetBody({ day }: { day: DayInfo }) {
             >
               {myReq?.kind === 'off' ? '希望有休に変更する（要相談）' : '希望有休にする（要相談）'}
             </button>
+            )
           )}
 
           <div className="btn-pair">

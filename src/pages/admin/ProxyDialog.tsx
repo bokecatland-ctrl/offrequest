@@ -49,6 +49,8 @@ export function ProxyDialog({ open, initialStaffId, initialDate, onClose }: Prop
   if (used >= s.max_days) reasons.push(`月${s.max_days}日を超える`);
   if (onDay.length >= s.max_per_day) reasons.push(`同じ日の${onDay.length + 1}人目`);
   if (long) reasons.push('長期有休が入っている月');
+  const blocked = (data.blocked_days ?? []).find((b) => b.date === date);
+  if (blocked) reasons.push(`受付しない日${blocked.reason ? `（${blocked.reason}）` : ''}`);
 
   const act = async (fn: () => Promise<unknown>, msg: string) => {
     setBusy(true);

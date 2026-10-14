@@ -267,6 +267,41 @@ begin
   raise notice 'ok: 名前の変更申請';
 end $$;
 
+-- 受付しない日
+do $$
+declare t text := current_setting('t.token'); a text := current_setting('t.admin');
+  s1 uuid := current_setting('t.s1')::uuid; s2 uuid := current_setting('t.s2')::uuid;
+  s3 uuid := current_setting('t.s3')::uuid; n int; r jsonb; l jsonb;
+begin
+  perform public.staff_set_request(t, s3, '2026-11-29', 'off');           -- 先に入っていた希望休
+  n := public.admin_save_blocked_days(a, '2026-11-28', '2026-11-30', '年末年始');
+  assert n = 3, 'FAIL: 登録件数 ' || n;
+  begin
+    perform public.staff_set_request(t, s2, '2026-11-28', 'off');
+    raise exception 'FAIL: 受付しない日に希望休が入った';
+  exception when sqlstate 'P0001' then
+    assert sqlerrm like '年末年始のため%', 'FAIL: メッセージ: ' || sqlerrm;
+  end;
+  begin
+    perform public.staff_set_request(t, s2, '2026-11-28', 'paid');
+    raise exception 'FAIL: 受付しない日に希望有休が入った';
+  exception when sqlstate 'P0001' then null;
+  end;
+  perform public.staff_save_note(t, s2, '2026-11-28', 'plan', '潮風会');  -- コメントは書ける
+  -- 先に入っていた希望は残り、管理者の一覧に出る
+  l := public.admin_get_blocked_days(a);
+  assert (select jsonb_array_length(x->'requests') from jsonb_array_elements(l) x where x->>'date' = '2026-11-29') = 1,
+    'FAIL: 受付しない日に入っている希望が見えない';
+  assert jsonb_array_length(public.get_month(t, '2026-11')->'blocked_days') = 3, 'FAIL: 月のデータに出ない';
+  -- 本人は取り消せる。管理者は例外として登録できる
+  perform public.staff_cancel_request(t, s3, '2026-11-29');
+  r := public.admin_set_request(a, s3, '2026-11-29', 'off');
+  assert (r->>'is_exception')::boolean, 'FAIL: 代行登録が例外になっていない';
+  perform public.admin_delete_blocked_days(a, array['2026-11-28'::date, '2026-11-29'::date, '2026-11-30'::date]);
+  perform public.staff_set_request(t, s2, '2026-11-28', 'paid');          -- 解除すれば入れられる
+  raise notice 'ok: 受付しない日';
+end $$;
+
 -- パスコード5回失敗でロック
 do $$
 declare r jsonb; i int;

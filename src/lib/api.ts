@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type {
+  AdminBlockedDay,
   AdminOverview,
   AuditEntry,
   Bootstrap,
@@ -109,6 +110,11 @@ export const api = {
   adminRegenerateToken: (session: string) => rpc<string>('admin_regenerate_token', { p_session: session }),
   adminDecideNameChange: (session: string, id: string, approve: boolean) =>
     rpc('admin_decide_name_change', { p_session: session, p_id: id, p_approve: approve }),
+  adminSaveBlockedDays: (session: string, start: string, end: string, reason: string) =>
+    rpc<number>('admin_save_blocked_days', { p_session: session, p_start: start, p_end: end, p_reason: reason }),
+  adminDeleteBlockedDays: (session: string, dates: string[]) =>
+    rpc('admin_delete_blocked_days', { p_session: session, p_dates: dates }),
+  adminBlockedDays: (session: string) => rpc<AdminBlockedDay[]>('admin_get_blocked_days', { p_session: session }),
   adminAudit: (session: string, limit = 200) =>
     rpc<AuditEntry[]>('admin_get_audit', { p_session: session, p_limit: limit }),
 };
