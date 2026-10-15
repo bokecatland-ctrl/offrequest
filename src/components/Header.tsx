@@ -7,7 +7,7 @@ import { Sheet } from './Sheet';
 import { useLongPress } from './useLongPress';
 
 export function Header({ label = '希望休の入力' }: { label?: string }) {
-  const { boot, month, setMonth, staffId, staffName, adminSession, nameChange } = useApp();
+  const { months, month, setMonth, staffId, staffName, adminSession, nameChange } = useApp();
   const [passOpen, setPassOpen] = useState(false);
   const [nameOpen, setNameOpen] = useState(false);
   // 管理者の入口：タイトルを長押し（見た目では目立たせない）
@@ -15,7 +15,6 @@ export function Header({ label = '希望休の入力' }: { label?: string }) {
     if (!adminSession) setPassOpen(true);
   });
 
-  const months = boot?.months ?? [];
   const idx = months.findIndex((m) => m.month === month);
   const prev = idx > 0 ? months[idx - 1].month : null;
   const next = idx >= 0 && idx < months.length - 1 ? months[idx + 1].month : null;
@@ -34,6 +33,9 @@ export function Header({ label = '希望休の入力' }: { label?: string }) {
             </button>
           )}
           <h1 className="page-title">{month ? monthLabel(month) : '—'}</h1>
+          {adminSession && months.find((m) => m.month === month)?.published === false && (
+            <span className="unpub-tag">非公開</span>
+          )}
           {months.length > 1 && (
             <button type="button" className="icon-btn" disabled={!next} onClick={() => next && setMonth(next)} aria-label="次の月">
               ›

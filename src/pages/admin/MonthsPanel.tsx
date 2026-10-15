@@ -11,7 +11,7 @@ function suggest(months: string[]): { month: string; date: string; time: string 
 }
 
 export function MonthsPanel() {
-  const { admin, adminSession, run, setMonth, month: current } = useApp();
+  const { admin, adminSession, run } = useApp();
   const [form, setForm] = useState(() => suggest((admin?.months ?? []).map((m) => m.month)));
   const [editing, setEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -37,7 +37,8 @@ export function MonthsPanel() {
       <section className="card">
         <h2 className="card-title">{editing ? `${monthLabel(editing)}の締切を変更` : '月を作る'}</h2>
         <p className="muted">
-          月を作ると、スタッフがその月の希望休を入力できるようになります。締切を過ぎると、スタッフは閲覧のみになります。
+          作った月は、はじめは<strong>非公開</strong>です（スタッフには見えません）。その間に長期有休・受付しない日を整え、
+          下の一覧の「公開する」を押すと、スタッフが希望休を入力できるようになります。締切を過ぎると、スタッフは閲覧のみになります。
         </p>
         <div className="form">
           <label className="field">
@@ -90,18 +91,33 @@ export function MonthsPanel() {
         <h3 className="card-title">設定済みの月</h3>
         {admin.months.length === 0 && <p className="empty">まだありません。</p>}
         <ul className="admin-list">
-          {[...admin.months].reverse().map((m) => (
+          {[...admin.months].reverse().map((m) => ({ ...m, published: m.published !== false })).map((m) => (
             <li key={m.month}>
               <strong>{monthLabel(m.month)}</strong>
+              {m.published ? <span className="pub-tag">公開中</span> : <span className="unpub-tag">非公開</span>}
               <span className="muted">
                 締切 {deadlineLabel(m.deadline)}（{deadlineRemaining(m.deadline)}）
               </span>
               <span className="push-right row-gap">
-                {m.month !== current && (
-                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setMonth(m.month)}>
-                    表示する
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className={`btn btn-sm ${m.published ? 'btn-ghost' : 'btn-primary'}`}
+                  disabled={busy}
+                  onClick={async () => {
+                    const msg = m.published
+                      ? `${monthLabel(m.month)}を非公開に戻しますか？\nスタッフには見えなくなり、入力もできなくなります（入力済みの希望は残ります）。`
+                      : `${monthLabel(m.month)}を公開しますか？\nスタッフが見られるようになり、希望休を入力できるようになります。`;
+                    if (!window.confirm(msg)) return;
+                    setBusy(true);
+                    await run(
+                      () => api.adminSetMonthPublished(adminSession, m.month, !m.published),
+                      m.published ? '非公開にしました' : '公開しました',
+                    );
+                    setBusy(false);
+                  }}
+                >
+                  {m.published ? '非公開に戻す' : '公開する'}
+                </button>
                 <button
                   type="button"
                   className="btn btn-outline btn-sm"

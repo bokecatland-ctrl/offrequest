@@ -93,6 +93,8 @@ export const api = {
     rpc('admin_delete_long_leave', { p_session: session, p_id: id }),
   adminSaveMonth: (session: string, month: string, deadline: string) =>
     rpc('admin_save_month', { p_session: session, p_month: month, p_deadline: deadline }),
+  adminSetMonthPublished: (session: string, month: string, published: boolean) =>
+    rpc('admin_set_month_published', { p_session: session, p_month: month, p_published: published }),
   adminSaveStaff: (session: string, id: string | null, name: string, shiftName: string, active: boolean) =>
     rpc<string>('admin_save_staff', {
       p_session: session, p_id: id, p_display_name: name, p_shift_name: shiftName, p_active: active,

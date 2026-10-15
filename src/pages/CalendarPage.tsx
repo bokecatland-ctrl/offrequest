@@ -8,12 +8,18 @@ import { buildDays } from '../lib/monthView';
 import { KEYS, load, save } from '../lib/storage';
 
 export function CalendarPage() {
-  const { data, boot, staffId, adminSession } = useApp();
+  const { data, boot, staffId, adminSession, month } = useApp();
   const [view, setView] = useState<'calendar' | 'list'>(() => (load(KEYS.view) === 'list' ? 'list' : 'calendar'));
   const [selected, setSelected] = useState<string | null>(null);
   const days = useMemo(() => (data ? buildDays(data) : new Map()), [data]);
 
   if (!boot) return null;
+  if (!month)
+    return (
+      <p className="empty card">
+        {adminSession ? '月がまだありません。「管理」→「月の設定」から作成してください。' : 'まだ受付している月はありません。'}
+      </p>
+    );
   if (!data) return <p className="empty card">読み込み中…</p>;
 
   const me = adminSession ? null : staffId;

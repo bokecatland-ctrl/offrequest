@@ -18,6 +18,8 @@ const ACTION: Record<string, string> = {
   approve_name_change: '名前の変更を承認',
   reject_name_change: '名前の変更を却下',
   save_month: '月の設定',
+  publish_month: '月の公開',
+  unpublish_month: '月を非公開に',
   save_blocked_days: '受付しない日の登録',
   delete_blocked_days: '受付しない日の解除',
   save_staff: '名簿の保存',

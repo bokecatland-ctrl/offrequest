@@ -16,6 +16,8 @@ export interface AdminStaff extends Staff {
 export interface MonthInfo {
   month: string; // YYYY-MM
   deadline: string; // ISO
+  /** 公開中か（管理者の一覧だけに入る。スタッフには公開中の月しか届かない） */
+  published?: boolean;
 }
 
 export interface Bootstrap {

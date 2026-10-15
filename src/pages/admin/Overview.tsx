@@ -9,6 +9,7 @@ import { ProxyDialog } from './ProxyDialog';
 
 export function Overview() {
   const { data, admin, adminSession, run, staffName } = useApp();
+  const [publishing, setPublishing] = useState(false);
   const [proxy, setProxy] = useState<{ staffId?: string; date?: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const days = useMemo(() => (data ? buildDays(data) : null), [data]);
@@ -41,6 +42,30 @@ export function Overview() {
 
   return (
     <div className="admin-overview">
+      {admin.months.find((m) => m.month === data.month)?.published === false && (
+        <section className="card card-attention">
+          <h3 className="card-title">
+            <span className="unpub-tag">非公開</span> この月はまだスタッフに見えていません
+          </h3>
+          <p className="muted small">
+            長期有休・受付しない日などを整えてから公開してください。公開すると、スタッフが希望休を入力できるようになります。
+          </p>
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={publishing}
+            onClick={async () => {
+              if (!window.confirm('この月を公開しますか？\nスタッフが見られるようになり、希望休を入力できるようになります。')) return;
+              setPublishing(true);
+              await run(() => api.adminSetMonthPublished(adminSession, data.month, true), '公開しました');
+              setPublishing(false);
+            }}
+          >
+            この月を公開する
+          </button>
+        </section>
+      )}
+
       <div className="admin-toolbar">
         <p className="muted">
           締切 {deadlineLabel(data.deadline)}（{deadlineRemaining(data.deadline)}）

@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { api, ApiError } from './lib/api';
 import { getDeviceId, KEYS, load, save } from './lib/storage';
-import type { AdminOverview, Bootstrap, LongLeave, MonthData, NameChange } from './lib/types';
+import type { AdminOverview, Bootstrap, LongLeave, MonthData, MonthInfo, NameChange } from './lib/types';
 
 export type AppStatus = 'loading' | 'ready' | 'no_token' | 'invalid_token' | 'error';
 
@@ -11,6 +11,8 @@ interface AppValue {
   token: string;
   boot: Bootstrap | null;
   month: string | null;
+  /** 選べる月（管理者モードでは非公開の月も含む） */
+  months: MonthInfo[];
   setMonth: (m: string) => void;
   data: MonthData | null;
   longLeaves: LongLeave[];
@@ -59,11 +61,11 @@ function readToken(): string {
 }
 
 /** 受付中の月（締切前で一番早い月）、なければ最後の月 */
-function pickDefaultMonth(boot: Bootstrap): string | null {
-  if (boot.months.length === 0) return null;
+function pickDefaultMonth(months: MonthInfo[]): string | null {
+  if (months.length === 0) return null;
   const now = Date.now();
-  const open = boot.months.find((m) => new Date(m.deadline).getTime() >= now);
-  return (open ?? boot.months[boot.months.length - 1]).month;
+  const open = months.find((m) => new Date(m.deadline).getTime() >= now);
+  return (open ?? months[months.length - 1]).month;
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -119,13 +121,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const b = await api.bootstrap(token);
       setBoot(b);
+      // 管理者モードでは非公開の月も含めて扱う
+      let ov: AdminOverview | null = null;
+      if (adminSession) {
+        try {
+          ov = await api.adminOverview(adminSession);
+          setAdmin(ov);
+        } catch (e) {
+          if (e instanceof ApiError && e.hint === 'admin_session') dropAdmin();
+          else throw e;
+        }
+      }
+      const months = ov ? ov.months : b.months;
       let m = monthRef.current;
-      if (!m || !b.months.some((x) => x.month === m)) {
-        m = pickDefaultMonth(b);
+      if (!m || !months.some((x) => x.month === m)) {
+        m = pickDefaultMonth(months);
         monthRef.current = m;
         setMonthState(m);
       }
-      const [d, ll] = await Promise.all([m ? api.month(token, m) : Promise.resolve(null), api.longLeaves(token)]);
+      const [d, ll] = await Promise.all([
+        m ? (ov && adminSession ? api.adminMonth(adminSession, m) : api.month(token, m)) : Promise.resolve(null),
+        api.longLeaves(token),
+      ]);
       if (monthRef.current === m) setData(d);
       setLongLeaves(ll);
 
@@ -146,14 +163,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setNameChange(nc);
       }
 
-      if (adminSession) {
-        try {
-          setAdmin(await api.adminOverview(adminSession));
-        } catch (e) {
-          if (e instanceof ApiError && e.hint === 'admin_session') dropAdmin();
-          else throw e;
-        }
-      }
       setStatus('ready');
     } catch (e) {
       if (e instanceof ApiError && e.hint === 'invalid_token') {
@@ -187,14 +196,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       monthRef.current = m;
       setMonthState(m);
       setData(null);
-      api.month(token, m).then(
+      (admin && adminSession ? api.adminMonth(adminSession, m) : api.month(token, m)).then(
         (d) => {
           if (monthRef.current === m) setData(d);
         },
         handleError,
       );
     },
-    [token, handleError],
+    [token, admin, adminSession, handleError],
   );
 
   const setStaffId = useCallback((id: string | null) => {
@@ -267,6 +276,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     token,
     boot,
     month,
+    months: admin ? admin.months : boot?.months ?? [],
     setMonth,
     data,
     longLeaves,

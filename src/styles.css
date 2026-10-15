@@ -1819,3 +1819,25 @@ textarea.input {
 .month-table td.blocked-col {
   background-image: repeating-linear-gradient(135deg, transparent 0 4px, rgba(0, 0, 0, 0.05) 4px 6px);
 }
+
+/* ---------- 月の公開・非公開 ---------- */
+
+.unpub-tag,
+.pub-tag {
+  flex: none;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 99px;
+}
+
+.unpub-tag {
+  background: var(--paid-soft);
+  border: 1px solid var(--paid-line);
+  color: #6b4100;
+}
+
+.pub-tag {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}

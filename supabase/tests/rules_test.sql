@@ -72,7 +72,29 @@ begin
   end loop;
   perform public.admin_save_month(a, '2026-11', now() + interval '10 days');
   perform public.admin_save_month(a, '2026-12', now() - interval '1 day');  -- 締切済み
-  raise notice 'ok: 名簿・月の設定';
+  -- 新しく作った月は非公開：スタッフには見えず、入力もできない
+  assert jsonb_array_length(public.get_bootstrap(current_setting('t.token'))->'months') = 0, 'FAIL: 非公開の月が見えている';
+  begin
+    perform public.get_month(current_setting('t.token'), '2026-11');
+    raise exception 'FAIL: 非公開の月を読めた';
+  exception when sqlstate 'P0001' then null;
+  end;
+  begin
+    perform public.staff_set_request(current_setting('t.token'), current_setting('t.s1')::uuid, '2026-11-01', 'off');
+    raise exception 'FAIL: 非公開の月に登録できた';
+  exception when sqlstate 'P0001' then null;
+  end;
+  -- 管理者は非公開の月も見られ、長期有休などを準備できる
+  perform public.admin_get_month(a, '2026-11');
+  assert (select bool_and(not (x->>'published')::boolean) from jsonb_array_elements(public.admin_get_overview(a)->'months') x),
+    'FAIL: 管理者に非公開と出ない';
+  perform public.admin_set_month_published(a, '2026-11', true);
+  perform public.admin_set_month_published(a, '2026-12', true);
+  assert jsonb_array_length(public.get_bootstrap(current_setting('t.token'))->'months') = 2, 'FAIL: 公開した月が見えない';
+  -- 締切を変えても公開のまま
+  perform public.admin_save_month(a, '2026-11', now() + interval '10 days');
+  assert jsonb_array_length(public.get_bootstrap(current_setting('t.token'))->'months') = 2, 'FAIL: 締切変更で非公開に戻った';
+  raise notice 'ok: 名簿・月の設定（非公開→公開）';
 end $$;
 
 -- 希望休：月3日まで
