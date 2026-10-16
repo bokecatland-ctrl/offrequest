@@ -34,7 +34,7 @@ async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
   if (error) {
     const msg = error.code === 'P0001' || /[ぁ-んァ-ン一-龥]/.test(error.message)
       ? error.message
-      : '通信に失敗しました。電波の良いところで、もう一度お試しください。';
+      : `通信に失敗しました。電波の良いところで、もう一度お試しください。${error.code ? `（${error.code}）` : ''}`;
     throw new ApiError(msg, error.hint || null);
   }
   return data as T;
