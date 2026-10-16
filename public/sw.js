@@ -13,7 +13,7 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(data.title || 'みんなの希望休', {
       body: data.body || '',
       icon: '/icon-192.png',
-      badge: '/icon-192.png',
+      badge: '/badge-96.png', // 通知バーの小さなアイコン（透明の背景に白い形だけ）
       tag: data.tag || undefined,
     }),
   );
