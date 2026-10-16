@@ -8,7 +8,17 @@
     <meta name="theme-color" content="#0f6b66" />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <link id="app-manifest" rel="manifest" href="/api/manifest" />
+    <script>
+      // ホーム画面に追加したときに URL の鍵（#k=…）付きで開けるよう、マニフェストに鍵を渡す
+      (function () {
+        try {
+          var m = location.hash.match(/[#&]k=([0-9a-z]{16,64})/i);
+          var k = m ? m[1] : localStorage.getItem('offreq.token');
+          if (k && /^[0-9a-z]{16,64}$/i.test(k)) document.getElementById('app-manifest').href = '/api/manifest?k=' + k;
+        } catch (e) {}
+      })();
+    </script>
     <meta name="application-name" content="みんなの希望休" />
     <meta name="apple-mobile-web-app-title" content="みんなの希望休" />
     <title>みんなの希望休</title>

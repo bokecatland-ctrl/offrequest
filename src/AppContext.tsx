@@ -266,6 +266,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setToken = useCallback((t: string) => {
     save(KEYS.token, t);
+    // ホーム画面に追加したときの開き先（マニフェスト）も新しい鍵にする
+    const link = document.getElementById('app-manifest') as HTMLLinkElement | null;
+    if (link) link.href = `/api/manifest?k=${t}`;
     window.history.replaceState(null, '', `#k=${t}`);
     setTokenState(t);
   }, []);
