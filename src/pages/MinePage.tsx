@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useApp } from '../AppContext';
 import { KindBadge } from '../components/DayEntries';
+import { NotifyCard } from '../components/NotifyCard';
 import { api } from '../lib/api';
 import { monthLabel, shortDate } from '../lib/dates';
 import { NOTE_LABEL } from '../lib/types';
@@ -26,6 +27,7 @@ export function MinePage() {
 
   return (
     <>
+      <NotifyCard />
       <p className="info-box">希望休も、出勤時間希望・予定あり・メモも、全員に見えます。</p>
 
       <section className="card">

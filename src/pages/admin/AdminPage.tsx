@@ -16,7 +16,7 @@ export const ADMIN_SECTIONS: { id: AdminSection; label: string }[] = [
   { id: 'months', label: '月の設定' },
   { id: 'blocked', label: '受付しない日' },
   { id: 'staff', label: '名簿' },
-  { id: 'settings', label: 'URL・設定' },
+  { id: 'settings', label: 'URL・通知・設定' },
   { id: 'audit', label: '操作履歴' },
 ];
 

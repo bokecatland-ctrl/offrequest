@@ -63,6 +63,12 @@ export const api = {
   cancelNameChange: (token: string, deviceId: string, id: string) =>
     rpc('staff_cancel_name_change', { p_token: token, p_device_id: deviceId, p_id: id }),
 
+  pushSubscribeStaff: (token: string, deviceId: string, staffId: string | null, endpoint: string, p256dh: string, auth: string) =>
+    rpc('staff_push_subscribe', {
+      p_token: token, p_device_id: deviceId, p_staff_id: staffId, p_endpoint: endpoint, p_p256dh: p256dh, p_auth: auth,
+    }),
+  pushUnsubscribe: (token: string, endpoint: string) => rpc('push_unsubscribe', { p_token: token, p_endpoint: endpoint }),
+
   // ---- 管理者 ----
   adminLogin: (token: string, passcode: string) =>
     rpc<{ ok: boolean; session?: string; expires_at?: string; message?: string; locked?: boolean }>(
@@ -117,6 +123,14 @@ export const api = {
   adminDeleteBlockedDays: (session: string, dates: string[]) =>
     rpc('admin_delete_blocked_days', { p_session: session, p_dates: dates }),
   adminBlockedDays: (session: string) => rpc<AdminBlockedDay[]>('admin_get_blocked_days', { p_session: session }),
+  pushSubscribeAdmin: (session: string, deviceId: string, endpoint: string, p256dh: string, auth: string) =>
+    rpc('admin_push_subscribe', { p_session: session, p_device_id: deviceId, p_endpoint: endpoint, p_p256dh: p256dh, p_auth: auth }),
+  adminSetPushKeys: (session: string, publicKey: string, secret: string) =>
+    rpc('admin_set_push_keys', { p_session: session, p_public_key: publicKey, p_secret: secret }),
+  adminPushStatus: (session: string) =>
+    rpc<{ configured: boolean; staff_devices: number; staff_people: number; admin_devices: number; unsent: number }>(
+      'admin_push_status', { p_session: session }),
+  adminPushTest: (session: string, deviceId: string) => rpc('admin_push_test', { p_session: session, p_device_id: deviceId }),
   adminAudit: (session: string, limit = 200) =>
     rpc<AuditEntry[]>('admin_get_audit', { p_session: session, p_limit: limit }),
 };

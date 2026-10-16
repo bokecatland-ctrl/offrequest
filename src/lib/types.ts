@@ -22,7 +22,7 @@ export interface MonthInfo {
 
 export interface Bootstrap {
   now: string;
-  settings: { max_days: number; max_per_day: number };
+  settings: { max_days: number; max_per_day: number; push_public_key?: string | null };
   staff: Staff[];
   months: MonthInfo[];
 }

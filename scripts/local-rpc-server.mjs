@@ -31,7 +31,7 @@ http
     for await (const chunk of req) raw += chunk;
     const args = raw ? JSON.parse(raw) : {};
     const names = Object.keys(args);
-    if (!names.every((n) => /^p_[a-z_]+$/.test(n))) return send(res, 400, { message: 'bad args' });
+    if (!names.every((n) => /^p_[a-z0-9_]+$/.test(n))) return send(res, 400, { message: 'bad args' });
 
     const sql = `select public.${m[1]}(${names.map((n, i) => `${n} => $${i + 1}`).join(', ')}) as r`;
     const client = await pool.connect();

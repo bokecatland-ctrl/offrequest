@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { api, ApiError } from './lib/api';
+import { kickPushDispatch, syncStaffPush } from './lib/push';
 import { getDeviceId, KEYS, load, save } from './lib/storage';
 import type { AdminOverview, Bootstrap, LongLeave, MonthData, MonthInfo, NameChange } from './lib/types';
 
@@ -211,6 +212,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     save(KEYS.staffId, id);
   }, []);
 
+  // 通知を受け取っているスマホは、今の名前で宛先を登録し直す（名前の変更のあとなど）
+  useEffect(() => {
+    if (token && !adminSession) void syncStaffPush(token, deviceId, staffId).catch(() => undefined);
+  }, [token, deviceId, staffId, adminSession]);
+
   // 名簿から消えた名前を選んでいたら、選び直してもらう
   useEffect(() => {
     if (boot && staffId && !boot.staff.some((s) => s.id === staffId)) setStaffId(null);
@@ -228,6 +234,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     async (fn: () => Promise<unknown>, success?: string) => {
       try {
         await fn();
+        kickPushDispatch();
         if (success) showToast(success);
         await reload();
         return true;

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../../AppContext';
 import { api } from '../../lib/api';
+import { PushSettings } from './PushSettings';
 
 export function staffUrl(token: string): string {
   return `${window.location.origin}${window.location.pathname}#k=${token}`;
@@ -141,6 +142,8 @@ export function SettingsPanel() {
           </button>
         </form>
       </section>
+
+      <PushSettings />
 
       <section className="card">
         <h2 className="card-title">管理者モードの終了</h2>

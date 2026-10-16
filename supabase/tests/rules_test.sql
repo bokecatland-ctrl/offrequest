@@ -324,6 +324,88 @@ begin
   raise notice 'ok: 受付しない日';
 end $$;
 
+-- 通知（Web プッシュ）
+do $$
+declare t text := current_setting('t.token'); a text := current_setting('t.admin');
+  s1 uuid := current_setting('t.s1')::uuid; s2 uuid := current_setting('t.s2')::uuid; c jsonb; rid uuid; n int;
+  pub text := repeat('B', 87);
+begin
+  -- 鍵が未設定のあいだは何も溜まらない
+  perform public.admin_set_month_published(a, '2026-11', true);
+  begin
+    perform public.push_claim('x');
+    raise exception 'FAIL: 合言葉なしで push_claim できた';
+  exception when sqlstate 'P0001' then null;
+  end;
+  perform public.admin_set_push_keys(a, pub, 'secret-secret-secret-123');
+  assert public.get_bootstrap(t)->'settings'->>'push_public_key' = pub, 'FAIL: 公開鍵がスタッフに届かない';
+  perform public.staff_push_subscribe(t, 'device-s1', s1, 'https://push.example/s1', 'k1', 'a1');
+  perform public.staff_push_subscribe(t, 'device-s2', s2, 'https://push.example/s2', 'k2', 'a2');
+  perform public.admin_push_subscribe(a, 'device-admin', 'https://push.example/admin', 'k3', 'a3');
+  begin
+    perform public.push_claim('wrong-secret');
+    raise exception 'FAIL: 違う合言葉で push_claim できた';
+  exception when sqlstate 'P0001' then null;
+  end;
+  perform public.push_claim('secret-secret-secret-123');  -- 締切通知などを空にしておく
+
+  -- 公開 → スタッフ全員（管理者だけの端末には送らない）
+  perform public.admin_set_month_published(a, '2026-11', true);
+  c := public.push_claim('secret-secret-secret-123');
+  assert jsonb_array_length(c) = 2, 'FAIL: 公開の通知の宛先 ' || c::text;
+  assert c->0->>'title' like '2026年11月の希望休の受付を始めました', 'FAIL: 公開の通知の文 ' || c::text;
+  assert jsonb_array_length(public.push_claim('secret-secret-secret-123')) = 0, 'FAIL: 二重に送られる';
+
+  -- 要相談の希望有休 → 管理者。確認済み → 本人
+  perform public.staff_set_request(t, s2, '2026-11-26', 'paid');
+  c := public.push_claim('secret-secret-secret-123');
+  assert jsonb_array_length(c) = 1 and c->0->>'endpoint' = 'https://push.example/admin', 'FAIL: 要相談の通知 ' || c::text;
+  select (x->>'id')::uuid into rid from jsonb_array_elements(public.get_month(t, '2026-11')->'requests') x
+   where x->>'staff_id' = s2::text and x->>'date' = '2026-11-26';
+  perform public.admin_set_paid_status(a, rid, true);
+  c := public.push_claim('secret-secret-secret-123');
+  assert jsonb_array_length(c) = 1 and c->0->>'endpoint' = 'https://push.example/s2', 'FAIL: 確認済みの通知 ' || c::text;
+  assert c->0->>'body' = '11/26（木）の希望有休が確認済みになりました。', 'FAIL: 確認済みの文 ' || c::text;
+
+  -- 名前の変更申請 → 管理者。承認 → そのスマホ
+  perform public.staff_request_name_change(t, 'device-s1', s1, s2);
+  c := public.push_claim('secret-secret-secret-123');
+  assert jsonb_array_length(c) = 1 and c->0->>'endpoint' = 'https://push.example/admin', 'FAIL: 申請の通知 ' || c::text;
+  perform public.admin_decide_name_change(a, (public.staff_name_change_status(t, 'device-s1')->>'id')::uuid, true);
+  c := public.push_claim('secret-secret-secret-123');
+  assert jsonb_array_length(c) = 1 and c->0->>'endpoint' = 'https://push.example/s1', 'FAIL: 承認の通知 ' || c::text;
+
+  -- 届かなくなった宛先は消える
+  perform public.push_report('secret-secret-secret-123', array['https://push.example/s2']);
+  select (public.admin_push_status(a)->>'staff_devices')::int into n;
+  assert n = 1, 'FAIL: 届かない宛先が消えていない';
+  perform public.push_unsubscribe(t, 'https://push.example/s1');
+  raise notice 'ok: 通知（公開・要相談・確認済み・名前の変更）';
+end $$;
+
+-- 締切の通知（まだ何も入れていない人だけ・1回だけ）
+reset role;
+do $$ begin
+  insert into public.months (month, deadline, published)
+  values ('2027-02', (((now() at time zone 'Asia/Tokyo')::date + 3) + time '23:59') at time zone 'Asia/Tokyo', true);
+end $$;
+set role anon;
+do $$
+declare a text := current_setting('t.admin'); s1 uuid := current_setting('t.s1')::uuid; c jsonb; n int;
+begin
+  perform public.staff_push_subscribe(current_setting('t.token'), 'device-s1', s1, 'https://push.example/s1b', 'k', 'a');
+  c := public.push_claim('secret-secret-secret-123');
+  if extract(hour from now() at time zone 'Asia/Tokyo') >= 9 then
+    select count(*) into n from jsonb_array_elements(c) x where x->>'title' = '希望休の締切まであと3日です';
+    assert n = 1, 'FAIL: 締切3日前の通知 ' || c::text;
+    c := public.push_claim('secret-secret-secret-123');
+    assert jsonb_array_length(c) = 0, 'FAIL: 締切の通知が二重に出た';
+    raise notice 'ok: 締切3日前の通知';
+  else
+    raise notice 'skip: 締切の通知（日本時間9時前のため）';
+  end if;
+end $$;
+
 -- パスコード5回失敗でロック
 do $$
 declare r jsonb; i int;

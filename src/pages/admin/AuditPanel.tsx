@@ -28,6 +28,7 @@ const ACTION: Record<string, string> = {
   save_settings: '設定の変更',
   change_passcode: 'パスコード変更',
   regenerate_token: 'URL再発行',
+  set_push_keys: '通知の鍵の作成',
   admin_login: '管理者ログイン',
   admin_login_failed: 'パスコード間違い',
   setup_app: '初期設定',
