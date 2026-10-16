@@ -36,11 +36,20 @@ async function currentSubscription(): Promise<PushSubscription | null> {
   return reg ? reg.pushManager.getSubscription() : null;
 }
 
-export async function getPushState(): Promise<PushState> {
+/** 登録が今の公開鍵で作られたものか（管理者が鍵を作り直すと、古い登録には届かなくなる） */
+function sameKey(sub: PushSubscription, publicKey: string): boolean {
+  const k = sub.options?.applicationServerKey;
+  if (!k) return true; // 判定できないブラウザでは、そのまま使う
+  const a = new Uint8Array(k);
+  const b = keyToBytes(publicKey);
+  return a.length === b.length && a.every((v, i) => v === b[i]);
+}
+
+export async function getPushState(publicKey: string): Promise<PushState> {
   if (!supported()) return isIos() && !isStandalone() ? 'ios_needs_home' : 'unsupported';
   if (Notification.permission === 'denied') return 'denied';
   const sub = await currentSubscription();
-  return sub && Notification.permission === 'granted' ? 'on' : 'off';
+  return sub && Notification.permission === 'granted' && sameKey(sub, publicKey) ? 'on' : 'off';
 }
 
 function keyToBytes(base64url: string): Uint8Array {
@@ -63,7 +72,8 @@ async function subscribe(publicKey: string): Promise<PushSubscription> {
   const reg = await navigator.serviceWorker.register('/sw.js');
   await navigator.serviceWorker.ready;
   const existing = await reg.pushManager.getSubscription();
-  if (existing) return existing;
+  if (existing && sameKey(existing, publicKey)) return existing;
+  if (existing) await existing.unsubscribe(); // 古い鍵の登録は作り直す
   return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyToBytes(publicKey) as BufferSource });
 }
 
@@ -80,10 +90,10 @@ export async function enableAdminPush(session: string, deviceId: string, publicK
 }
 
 /** 受け取っている通知の宛先を、今の名前に合わせて登録し直す（名前の変更のあとなど） */
-export async function syncStaffPush(token: string, deviceId: string, staffId: string | null) {
-  if (!supported() || Notification.permission !== 'granted') return;
+export async function syncStaffPush(token: string, deviceId: string, staffId: string | null, publicKey: string | null) {
+  if (!publicKey || !supported() || Notification.permission !== 'granted') return;
   const sub = await currentSubscription();
-  if (!sub) return;
+  if (!sub || !sameKey(sub, publicKey)) return;
   const p = subscriptionParts(sub);
   await api.pushSubscribeStaff(token, deviceId, staffId, p.endpoint, p.p256dh, p.auth);
 }
@@ -93,6 +103,16 @@ export async function disablePush(token: string) {
   if (!sub) return;
   await api.pushUnsubscribe(token, sub.endpoint).catch(() => undefined);
   await sub.unsubscribe();
+}
+
+/** 溜まっている通知を今すぐ送ってもらい、結果を返す（テスト通知用） */
+export async function dispatchPushNow(): Promise<{ ok: boolean; sent?: number; reason?: string }> {
+  try {
+    const res = await fetch('/api/push-dispatch', { method: 'POST' });
+    return await res.json();
+  } catch {
+    return { ok: false, reason: 'network' };
+  }
 }
 
 /** 溜まっている通知を送ってもらう（操作のあとに呼ぶ。失敗しても気にしない） */

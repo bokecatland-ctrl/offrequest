@@ -214,8 +214,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // 通知を受け取っているスマホは、今の名前で宛先を登録し直す（名前の変更のあとなど）
   useEffect(() => {
-    if (token && !adminSession) void syncStaffPush(token, deviceId, staffId).catch(() => undefined);
-  }, [token, deviceId, staffId, adminSession]);
+    if (token && !adminSession)
+      void syncStaffPush(token, deviceId, staffId, boot?.settings.push_public_key ?? null).catch(() => undefined);
+  }, [token, deviceId, staffId, adminSession, boot?.settings.push_public_key]);
 
   // 名簿から消えた名前を選んでいたら、選び直してもらう
   useEffect(() => {

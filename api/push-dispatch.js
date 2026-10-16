@@ -52,6 +52,7 @@ export default async function handler(req, res) {
     res.status(200).json({ ok: true, sent, gone: gone.length });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ ok: false });
+    const reason = String(e?.message || '').includes('unauthorized') ? 'secret_mismatch' : 'error';
+    res.status(500).json({ ok: false, reason });
   }
 }

@@ -24,7 +24,7 @@ export function PushSettings() {
     if (
       configured &&
       !window.confirm(
-        '通知の鍵を作り直しますか？\n今までの通知の登録は使えなくなり、全員がもう一度「通知を受け取る」を押す必要があります。',
+        '通知の鍵を作り直しますか？\n・Vercel の PUSH_KEYS も新しい値に貼り直して Redeploy が必要です\n・今までの通知の登録は使えなくなり、全員がもう一度「通知を受け取る」を押す必要があります',
       )
     )
       return;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useApp } from '../AppContext';
 import { api } from '../lib/api';
-import { disablePush, enableAdminPush, enableStaffPush, getPushState, kickPushDispatch, type PushState } from '../lib/push';
+import { disablePush, dispatchPushNow, enableAdminPush, enableStaffPush, getPushState, type PushState } from '../lib/push';
 
 const Bell = () => (
   <span className="bell" aria-hidden="true">
@@ -24,8 +24,8 @@ export function NotifyCard({ admin = false }: { admin?: boolean }) {
   const publicKey = boot?.settings.push_public_key ?? null;
 
   useEffect(() => {
-    getPushState().then(setState, () => setState('unsupported'));
-  }, []);
+    if (publicKey) getPushState(publicKey).then(setState, () => setState('unsupported'));
+  }, [publicKey]);
 
   // 管理者が通知の設定をまだしていない、または判定中
   if (!publicKey || state === null) return null;
@@ -39,7 +39,7 @@ export function NotifyCard({ admin = false }: { admin?: boolean }) {
       showToast('通知をオンにしました');
     } catch (e) {
       showToast(e instanceof Error ? e.message : '通知をオンにできませんでした', 'error');
-      setState(await getPushState().catch(() => 'off' as PushState));
+      setState(await getPushState(publicKey).catch(() => 'off' as PushState));
     } finally {
       setBusy(false);
     }
@@ -118,8 +118,14 @@ export function NotifyCard({ admin = false }: { admin?: boolean }) {
   );
 }
 
+const DISPATCH_REASON: Record<string, string> = {
+  not_configured: 'Vercel に PUSH_KEYS が設定されていません（設定後は Redeploy が必要です）',
+  secret_mismatch: 'Vercel の PUSH_KEYS と、いまの通知の鍵が合っていません。鍵を作り直して、Vercel の値も貼り直してください',
+  network: '送信の仕組みにつながりませんでした',
+};
+
 function TestButton() {
-  const { adminSession, deviceId, run } = useApp();
+  const { adminSession, deviceId, showToast } = useApp();
   const [busy, setBusy] = useState(false);
   return (
     <button
@@ -129,9 +135,17 @@ function TestButton() {
       onClick={async () => {
         if (!adminSession) return;
         setBusy(true);
-        await run(() => api.adminPushTest(adminSession, deviceId), 'テスト通知を送りました（届くまで少しかかることがあります）');
-        kickPushDispatch();
-        setBusy(false);
+        try {
+          await api.adminPushTest(adminSession, deviceId);
+          const r = await dispatchPushNow();
+          if (r.ok && r.sent) showToast('テスト通知を送りました（届くまで少しかかることがあります）');
+          else if (r.ok) showToast('送り先が見つかりませんでした。「通知をオフにする」→「通知を受け取る」をやり直してください', 'error');
+          else showToast(DISPATCH_REASON[r.reason ?? ''] ?? '送信に失敗しました', 'error');
+        } catch (e) {
+          showToast(e instanceof Error ? e.message : '送信に失敗しました', 'error');
+        } finally {
+          setBusy(false);
+        }
       }}
     >
       テスト通知を送る
