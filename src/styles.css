@@ -1823,7 +1823,8 @@ textarea.input {
 /* ---------- 月の公開・非公開 ---------- */
 
 .unpub-tag,
-.pub-tag {
+.pub-tag,
+.ended-tag {
   flex: none;
   font-size: 12px;
   font-weight: 700;
@@ -1911,4 +1912,10 @@ textarea.input {
   border: 1.5px solid var(--note);
   border-radius: 3px;
   vertical-align: -2px;
+}
+
+.ended-tag {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--text-2);
 }

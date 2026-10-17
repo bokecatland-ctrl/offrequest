@@ -406,6 +406,33 @@ begin
   end if;
 end $$;
 
+-- 古い月は、対象月が終わってから1か月たつとスタッフに見えない（管理者には見える）
+reset role;
+insert into public.months (month, deadline, published) values
+  (to_char((now() at time zone 'Asia/Tokyo') - interval '2 months', 'YYYY-MM'), now() - interval '80 days', true),
+  (to_char((now() at time zone 'Asia/Tokyo') - interval '1 month', 'YYYY-MM'), now() - interval '50 days', true)
+on conflict (month) do update set published = true;
+set role anon;
+do $$
+declare t text := current_setting('t.token'); a text := current_setting('t.admin');
+  old_m text := to_char((now() at time zone 'Asia/Tokyo') - interval '2 months', 'YYYY-MM');
+  prev_m text := to_char((now() at time zone 'Asia/Tokyo') - interval '1 month', 'YYYY-MM');
+begin
+  assert not exists (select 1 from jsonb_array_elements(public.get_bootstrap(t)->'months') x where x->>'month' = old_m),
+    'FAIL: 2か月前の月がスタッフに見えている';
+  assert exists (select 1 from jsonb_array_elements(public.get_bootstrap(t)->'months') x where x->>'month' = prev_m),
+    'FAIL: 先月がスタッフに見えない';
+  begin
+    perform public.get_month(t, old_m);
+    raise exception 'FAIL: 隠れた月を読めた';
+  exception when sqlstate 'P0001' then null;
+  end;
+  perform public.admin_get_month(a, old_m);
+  assert exists (select 1 from jsonb_array_elements(public.admin_get_overview(a)->'months') x where x->>'month' = old_m),
+    'FAIL: 管理者に古い月が見えない';
+  raise notice 'ok: 古い月を自動で隠す';
+end $$;
+
 -- パスコード5回失敗でロック
 do $$
 declare r jsonb; i int;

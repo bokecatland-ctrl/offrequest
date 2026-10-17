@@ -94,7 +94,15 @@ export function MonthsPanel() {
           {[...admin.months].reverse().map((m) => ({ ...m, published: m.published !== false })).map((m) => (
             <li key={m.month}>
               <strong>{monthLabel(m.month)}</strong>
-              {m.published ? <span className="pub-tag">公開中</span> : <span className="unpub-tag">非公開</span>}
+              {!m.published ? (
+                <span className="unpub-tag">非公開</span>
+              ) : todayTokyo() >= dateOf(addMonths(m.month, 2), 1) ? (
+                <span className="ended-tag" title="対象月が終わってから1か月たったため、スタッフには表示していません">
+                  表示終了
+                </span>
+              ) : (
+                <span className="pub-tag">公開中</span>
+              )}
               <span className="muted">
                 締切 {deadlineLabel(m.deadline)}（{deadlineRemaining(m.deadline)}）
               </span>
